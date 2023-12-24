@@ -1,33 +1,49 @@
-name: Certbot Workflow
-
+name: Build Certbot
 on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - main  # Change this to your default branch
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     container:
-      image: multiarch/ubuntu-core:arm64-22.04
-      options: --privileged
+      image: docker://arm64v8/ubuntu:latest
 
     steps:
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y python3 python3-venv libaugeas0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11' 
-      - name: Set up Certbot
-        run: |
-          sudo python3 -m venv /opt/certbot/
-          sudo /opt/certbot/bin/pip install --upgrade pip
-          sudo /opt/certbot/bin/pip install certbot
-      - name: Upload Certbot to GitHub Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: certbot-artifact
-          path: /opt/certbot/
+
+    - name: Install QEMU user static
+      run: |
+        sudo apt update
+        sudo apt install -y qemu-user-static
+
+    - name: Enable QEMU user emulation
+      run: |
+        sudo cp /usr/bin/qemu-aarch64-static /opt/qemu-aarch64-static
+        sudo echo ':arm64:M::\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/opt/qemu-aarch64-static:' | sudo tee -a /proc/sys/fs/binfmt_misc/register
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y python3 python3-venv libaugeas0
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11' 
+
+    - name: Create Certbot
+      run: |
+        python3 -m venv /opt/certbot/
+        /opt/certbot/bin/pip install --upgrade pip
+        /opt/certbot/bin/pip install certbot
+
+    - name: Archive Certbot
+      run: |
+        tar -czf certbot-artifact.tar.gz -C /opt certbot
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: certbot-artifact
+        path: certbot-artifact.tar.gz
