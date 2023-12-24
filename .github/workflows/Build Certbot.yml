@@ -20,6 +20,9 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y python3 python3-venv libaugeas0
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11' 
     - name: Create Certbot
       run: |
         python -m venv /opt/certbot/
