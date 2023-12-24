@@ -27,9 +27,9 @@ jobs:
         /opt/certbot/bin/pip install certbot
     - name: Archive /opt/certbot
       run: |
-        tar -czf certbot-artifact.tar.gz -C /opt certbot
+        tar -czf certbot-artifact-${{ matrix.config.arch }}.tar.gz -C /opt certbot
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: certbot-artifact
-        path: certbot-artifact.tar.gz
+        name: certbot-artifact-${{ matrix.config.arch }}
+        path: certbot-artifact-${{ matrix.config.arch }}.tar.gz
