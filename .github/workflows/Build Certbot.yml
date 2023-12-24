@@ -1,49 +1,37 @@
 name: Build Certbot
+
 on:
   workflow_dispatch:
   push:
     branches:
-      - main  # Change this to your default branch
+      - main
 
 jobs:
-  build:
+  build_aarch64:
     runs-on: ubuntu-latest
-
-    container:
-      image: docker://arm64v8/ubuntu:latest
-
+    name: Build on ubuntu-latest aarch64
     steps:
-
-    - name: Install QEMU user static
-      run: |
-        sudo apt update
-        sudo apt install -y qemu-user-static
-
-    - name: Enable QEMU user emulation
-      run: |
-        sudo cp /usr/bin/qemu-aarch64-static /opt/qemu-aarch64-static
-        sudo echo ':arm64:M::\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/opt/qemu-aarch64-static:' | sudo tee -a /proc/sys/fs/binfmt_misc/register
-
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y python3 python3-venv libaugeas0
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11' 
-
-    - name: Create Certbot
-      run: |
-        python3 -m venv /opt/certbot/
-        /opt/certbot/bin/pip install --upgrade pip
-        /opt/certbot/bin/pip install certbot
-
-    - name: Archive Certbot
-      run: |
-        tar -czf certbot-artifact.tar.gz -C /opt certbot
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: certbot-artifact
-        path: certbot-artifact.tar.gz
+      - uses: uraimo/run-on-arch-action@v2
+        name: Run commands
+        id: runcmd
+        with:
+          arch: aarch64
+          distro: ubuntu_latest
+          githubToken: ${{ github.token }}
+          install: |
+            apt-get update -q -y
+            add-apt-repository ppa:deadsnakes/ppa
+            apt-get install -q -y python3.11 python3.11-pip python3.11-venv libaugeas0
+            update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
+          run: |
+            python3 -m venv /opt/certbot/
+            /opt/certbot/bin/pip install --upgrade pip
+            /opt/certbot/bin/pip install certbot
+            tar -czf certbot-artifact.tar.gz -C /opt certbot
+            cp certbot-artifact.tar.gz "/artifacts/certbot-artifact.tar.gz"
+            echo "Produced artifact at /artifacts/certbot-artifact.tar.gz"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: certbot-artifact
+          path: /artifacts/certbot-artifact.tar.gz
