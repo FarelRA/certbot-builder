@@ -37,7 +37,7 @@ jobs:
           run: |
             python3 -m venv /opt/certbot/
             /opt/certbot/bin/pip install --upgrade pip
-            /opt/certbot/bin/pip install certbot
+            LDFLAGS='--unresolved-symbols=ignore-all -lpython3.11' /opt/certbot/bin/pip install certbot
             tar -czf certbot-artifact.tar.gz -C /opt certbot
             cp certbot-artifact.tar.gz "/artifacts/certbot-artifact.tar.gz"
             echo "Produced artifact at /artifacts/certbot-artifact.tar.gz"
