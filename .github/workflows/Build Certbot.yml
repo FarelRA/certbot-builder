@@ -45,4 +45,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: certbot-artifact
-          path: /artifacts/certbot-artifact.tar.gz
+          path: ./artifacts/certbot-artifact.tar.gz
